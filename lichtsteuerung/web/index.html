@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lichtsteuerung</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main>
+    <h1>Lichtsteuerung</h1>
+    <p class="sub">Lokale Steuerung für Philips Hue und Casambi</p>
+
+    <section class="card">
+      <h2>Serverstatus</h2>
+      <dl id="status"><dt>Status</dt><dd>wird geladen …</dd></dl>
+    </section>
+
+    <section class="card">
+      <h2>Lichtsysteme</h2>
+      <ul id="adapters"></ul>
+    </section>
+
+    <p class="links"><a href="/docs">API-Dokumentation</a> · <a href="/api/health">/api/health</a></p>
+  </main>
+
+  <script>
+    async function load() {
+      const status = document.getElementById("status");
+      const list = document.getElementById("adapters");
+      try {
+        const res = await fetch("/api/health");
+        const h = await res.json();
+        status.innerHTML = "";
+        const rows = [
+          ["Status", h.status],
+          ["Version", h.version],
+          ["Modus", h.simulation ? "Simulation" : "Live"],
+          ["Laufzeit", Math.round(h.uptime_seconds) + " s"],
+        ];
+        for (const [k, v] of rows) {
+          const dt = document.createElement("dt"); dt.textContent = k;
+          const dd = document.createElement("dd"); dd.textContent = v;
+          status.append(dt, dd);
+        }
+        list.innerHTML = "";
+        for (const a of Object.values(h.adapters)) {
+          const li = document.createElement("li");
+          const state = !a.implemented ? "noch nicht implementiert"
+                      : a.enabled ? "aktiv" : "deaktiviert";
+          li.textContent = a.label + " – " + state;
+          list.append(li);
+        }
+      } catch (e) {
+        status.innerHTML = "<dt>Status</dt><dd class='err'>nicht erreichbar</dd>";
+      }
+    }
+    load();
+  </script>
+</body>
+</html>
